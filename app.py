@@ -1,4 +1,5 @@
 import json
+import time
 import pandas as pd
 from google import genai
 import streamlit as st
@@ -16,7 +17,6 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
     else:
         with st.spinner("Lendo e organizando dados com o Google Gemini..."):
             try:
-                # Conexão oficial com a biblioteca do Google Gemini
                 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
                 prompt = f"""
@@ -48,13 +48,32 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                # Chamada com o modelo atual recomendado
-                response = client.models.generate_content(
-                    model="gemini-3.8-flash",
-                    contents=prompt,
-                )
+                # Função de chamada com tentativa e erro (Retry) para evitar erro 503
+                response = None
+                modelos = ["gemini-3.8-flash", "gemini-2.5-flash"]
+                
+                for modelo in modelos:
+                    for tentativa in range(3):  # Tenta até 3 vezes por modelo
+                        try:
+                            response = client.models.generate_content(
+                                model=modelo,
+                                contents=prompt,
+                            )
+                            if response and response.text:
+                                break
+                        except Exception as e:
+                            if "503" in str(e) or "UNAVAILABLE" in str(e):
+                                time.sleep(2)  # Espera 2 segundos se o servidor estiver sobrecarregado
+                                continue
+                            else:
+                                raise e
+                    if response and response.text:
+                        break
 
-                # Tratamento do texto para garantir conversão limpa em JSON
+                if not response or not response.text:
+                    raise Exception("O serviço do Google está temporariamente indisponível. Aguarde alguns segundos e tente novamente.")
+
+                # Limpeza e formatação do JSON recebido
                 texto_resposta = response.text.strip()
                 if texto_resposta.startswith("```json"):
                     texto_resposta = texto_resposta[7:-3].strip()
