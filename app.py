@@ -53,7 +53,7 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 """
 
                 # Lista de modelos alternativos para evitar instabilidades (503/404)
-                modelos = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
+                modelos = ["gemini-3.5-flash-lite"]
                 response = None
                 ultimo_erro = None
 
