@@ -54,7 +54,7 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
 
                 # Chamada direta com o modelo atual estável
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.8-flash",
                     contents=prompt,
                 )
 
