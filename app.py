@@ -1,4 +1,5 @@
 import json
+import time
 import pandas as pd
 from google import genai
 import streamlit as st
@@ -64,10 +65,32 @@ with tab1:
                     {texto_whatsapp}
                     """
 
-                    response = client.models.generate_content(
-                        model="gemini-3.5-flash-lite",
-                        contents=prompt,
-                    )
+                    # Sistema com retry para contornar oscilações e erro 503
+                    response = None
+                    modelos = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
+                    
+                    for mod in modelos:
+                        for tentativa in range(3):
+                            try:
+                                res = client.models.generate_content(
+                                    model=mod,
+                                    contents=prompt,
+                                )
+                                if res and res.text:
+                                    response = res
+                                    break
+                            except Exception as err:
+                                if "503" in str(err) or "UNAVAILABLE" in str(err):
+                                    time.sleep(2)  # Aguarda 2 segundos se o servidor do Google estiver ocupado
+                                    continue
+                                else:
+                                    break
+                        if response and response.text:
+                            break
+
+                    if not response or not response.text:
+                        st.error("⚠️ Os servidores do Google Gemini estão em alta demanda no momento. Aguarde alguns segundos e clique no botão novamente.")
+                        st.stop()
 
                     texto_resposta = response.text.strip()
                     if texto_resposta.startswith("```json"):
