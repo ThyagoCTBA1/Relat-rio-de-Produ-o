@@ -3,133 +3,162 @@ import time
 import pandas as pd
 from google import genai
 import streamlit as st
+from streamlit_gsheets import GSheetsConnection
 
-st.set_page_config(page_title="Gestão de Produção", layout="wide", page_icon="🏭")
+st.set_page_config(page_title="Gestão de Produção & Histórico", layout="wide", page_icon="🏭")
 
-st.title("🏭 Leitor e Agrupador de Relatórios de Produção")
-st.write("Copie o texto do relatório do WhatsApp e cole na caixa abaixo.")
+st.title("🏭 Gestão de Produção - Leitor & Histórico Acumulado")
 
-texto_whatsapp = st.text_area("📋 Cole o relatório aqui:", height=280)
+# Conexão com o Google Sheets
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except Exception:
+    conn = None
 
-if st.button("🚀 Processar e Agrupar Dados", type="primary"):
-    if not texto_whatsapp.strip():
-        st.warning("⚠️ Por favor, cole o texto do relatório antes de processar.")
-    else:
-        with st.spinner("Lendo e organizando dados com o Google Gemini..."):
-            try:
-                if "GEMINI_API_KEY" not in st.secrets:
-                    st.error("❌ A chave GEMINI_API_KEY não foi encontrada nos Secrets do Streamlit.")
-                    st.stop()
+tab1, tab2 = st.tabs(["📋 Processar Relatório Diário", "📈 Dashboard de Histórico"])
 
-                client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+# ================= =========================================
+# TAB 1: PROCESSAR NOVO RELATÓRIO DO WHATSAPP
+# ==========================================================
+with tab1:
+    st.write("Copie o texto do relatório do WhatsApp e cole na caixa abaixo.")
+    texto_whatsapp = st.text_area("📋 Cole o relatório aqui:", height=250)
 
-                prompt = f"""
-                Você é um assistente especialista em Controle de Produção Industrial (PCP).
-                Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
+    if st.button("🚀 Processar e Salvar no Histórico", type="primary"):
+        if not texto_whatsapp.strip():
+            st.warning("⚠️ Por favor, cole o texto do relatório antes de processar.")
+        else:
+            with st.spinner("Lendo dados e atualizando histórico..."):
+                try:
+                    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
-                Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
+                    prompt = f"""
+                    Você é um assistente especialista em Controle de Produção Industrial (PCP).
+                    Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
 
-                {{
-                  "data": "DD/MM/AAAA",
-                  "turno": "1º ou 2º",
-                  "mo_total": 0,
-                  "efetivos": 0,
-                  "temporarios": 0,
-                  "ausencias": "Descrição das ausências, atestados e alterações de pessoal",
-                  "producao": [
+                    Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
+
                     {{
-                      "equipamento": "Nome do equipamento",
-                      "produto": "Nome do produto ou projeto",
-                      "programado": 0,
-                      "realizado": 0,
-                      "mo_necessaria": 0,
-                      "status": "Detalhes de falhas, paradas e observações"
+                      "data": "DD/MM/AAAA",
+                      "turno": "1º ou 2º",
+                      "mo_total": 0,
+                      "efetivos": 0,
+                      "temporarios": 0,
+                      "ausencias": "Descrição das ausências, atestados e alterações de pessoal",
+                      "producao": [
+                        {{
+                          "equipamento": "Nome do equipamento",
+                          "produto": "Nome do produto ou projeto",
+                          "programado": 0,
+                          "realizado": 0,
+                          "mo_necessaria": 0,
+                          "status": "Detalhes de falhas, paradas e observações"
+                        }}
+                      ]
                     }}
-                  ]
-                }}
 
-                Texto do relatório:
-                {texto_whatsapp}
-                """
+                    Texto do relatório:
+                    {texto_whatsapp}
+                    """
 
-                # Lista de modelos alternativos para evitar instabilidades (503/404)
-                modelos = ["gemini-3.5-flash-lite"]
-                response = None
-                ultimo_erro = None
+                    # Chamada do modelo Gemini
+                    response = client.models.generate_content(
+                        model="gemini-3.5-flash-lite",
+                        contents=prompt,
+                    )
 
-                for modelo in modelos:
-                    for tentativa in range(3):
-                        try:
-                            res = client.models.generate_content(
-                                model=modelo,
-                                contents=prompt,
+                    texto_resposta = response.text.strip()
+                    if texto_resposta.startswith("```json"):
+                        texto_resposta = texto_resposta[7:-3].strip()
+                    elif texto_resposta.startswith("```"):
+                        texto_resposta = texto_resposta[3:-3].strip()
+
+                    dados = json.loads(texto_resposta)
+
+                    st.success("✅ Relatório Processado com Sucesso!")
+
+                    # Exibição resumida
+                    st.subheader("📊 Resumo do Turno Processado")
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.metric("Data", dados.get("data", "N/A"))
+                    c2.metric("Turno", dados.get("turno", "N/A"))
+                    c3.metric("M.O Total", dados.get("mo_total", 0))
+                    c4.metric("Efetivos / Temp", f"{dados.get('efetivos', 0)} / {dados.get('temporarios', 0)}")
+
+                    # Tabela de produção do turno
+                    lista_prod = dados.get("producao", [])
+                    if lista_prod:
+                        df_turno = pd.DataFrame(lista_prod)
+                        df_turno["data"] = dados.get("data")
+                        df_turno["turno"] = dados.get("turno")
+                        
+                        if "programado" in df_turno.columns and "realizado" in df_turno.columns:
+                            df_turno["eficiencia_%"] = df_turno.apply(
+                                lambda r: round((r["realizado"] / r["programado"] * 100), 1) if r["programado"] > 0 else 0.0,
+                                axis=1
                             )
-                            if res and res.text:
-                                response = res
-                                break
-                        except Exception as err:
-                            ultimo_erro = str(err)
-                            # Se for instabilidade (503), aguarda 2 segundos e tenta novamente
-                            if "503" in ultimo_erro or "UNAVAILABLE" in ultimo_erro:
-                                time.sleep(2)
-                                continue
-                            else:
-                                break
-                    if response and response.text:
-                        break
 
-                if not response or not response.text:
-                    st.error(f"Erro de conexão com o servidor do Google: {ultimo_erro}")
-                    st.stop()
+                        st.dataframe(df_turno, use_container_width=True)
 
-                # Limpeza e conversão do JSON recebido
-                texto_resposta = response.text.strip()
-                if texto_resposta.startswith("```json"):
-                    texto_resposta = texto_resposta[7:-3].strip()
-                elif texto_resposta.startswith("```"):
-                    texto_resposta = texto_resposta[3:-3].strip()
+                        # Gravação automática no Google Sheets (se configurado)
+                        if conn:
+                            try:
+                                # Prepara dados de produção
+                                df_save_prod = df_turno[["data", "turno", "equipamento", "produto", "programado", "realizado", "eficiencia_%", "status"]]
+                                df_existente_prod = conn.read(worksheet="Producao", ttl=0)
+                                df_final_prod = pd.concat([df_existente_prod, df_save_prod], ignore_index=True)
+                                conn.update(worksheet="Producao", data=df_final_prod)
 
-                dados = json.loads(texto_resposta)
+                                # Prepara dados de M.O
+                                df_save_mo = pd.DataFrame([{
+                                    "data": dados.get("data"),
+                                    "turno": dados.get("turno"),
+                                    "mo_total": dados.get("mo_total"),
+                                    "efetivos": dados.get("efetivos"),
+                                    "temporarios": dados.get("temporarios"),
+                                    "ocorrencias": dados.get("ausencias")
+                                }])
+                                df_existente_mo = conn.read(worksheet="Absenteismo", ttl=0)
+                                df_final_mo = pd.concat([df_existente_mo, df_save_mo], ignore_index=True)
+                                conn.update(worksheet="Absenteismo", data=df_final_mo)
 
-                st.success("✅ Relatório Processado com Sucesso!")
+                                st.success("💾 Dados gravados com sucesso na planilha do Google Sheets!")
+                            except Exception as err_save:
+                                st.info("Visualização gerada! Para salvar automaticamente na planilha, configure a URL no Secrets.")
 
-                # Exibição do resumo de pessoal
-                st.subheader("📊 Mão de Obra e Ocorrências")
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Data", dados.get("data", "N/A"))
-                c2.metric("Turno", dados.get("turno", "N/A"))
-                c3.metric("M.O Total", dados.get("mo_total", 0))
-                c4.metric("Efetivos / Temp", f"{dados.get('efetivos', 0)} / {dados.get('temporarios', 0)}")
+                except Exception as e:
+                    st.error(f"Erro ao processar relatório: {e}")
 
-                st.info(f"**Ocorrências de Pessoal:** {dados.get('ausencias', 'Nenhuma ocorrência relatada.')}")
+# ==========================================================
+# TAB 2: DASHBOARD DE MÉTRICAS E HISTÓRICO ACUMULADO
+# ==========================================================
+with tab2:
+    st.header("📈 Histórico Acumulado e Gráficos")
+    
+    if conn:
+        try:
+            df_hist_prod = conn.read(worksheet="Producao", ttl=0)
+            df_hist_mo = conn.read(worksheet="Absenteismo", ttl=0)
 
-                # Exibição do resumo de produção
-                st.subheader("⚙️ Produção Detalhada por Equipamento")
-                lista_prod = dados.get("producao", [])
+            if not df_hist_prod.empty:
+                st.subheader("⚙️ Eficiência Médias por Equipamento (%)")
+                df_grafico = df_hist_prod.groupby("equipamento")["eficiencia_%"].mean().reset_index()
+                st.bar_chart(df_grafico.set_index("equipamento"))
 
-                if lista_prod:
-                    df = pd.DataFrame(lista_prod)
+                st.subheader("📦 Produção Total Realizada vs. Programada por Equipamento")
+                df_totais = df_hist_prod.groupby("equipamento")[["programado", "realizado"]].sum()
+                st.bar_chart(df_totais)
 
-                    if "programado" in df.columns and "realizado" in df.columns:
-                        df["eficiencia_%"] = df.apply(
-                            lambda row: round((row["realizado"] / row["programado"] * 100), 1) if row["programado"] > 0 else 0.0,
-                            axis=1
-                        )
+                st.subheader("📜 Histórico Geral de Produção")
+                st.dataframe(df_hist_prod, use_container_width=True)
+            else:
+                st.info("Nenhum dado de produção encontrado na planilha ainda.")
 
-                    cols = ["equipamento", "produto", "programado", "realizado", "eficiencia_%", "mo_necessaria", "status"]
-                    cols_existentes = [c for c in cols if c in df.columns]
-                    df = df[cols_existentes]
+            if not df_hist_mo.empty:
+                st.subheader("👥 Ocorrências de Absenteísmo e Mão de Obra")
+                st.dataframe(df_hist_mo, use_container_width=True)
 
-                    st.dataframe(df, use_container_width=True)
-
-                    st.subheader("⚠️ Resumo de Problemas e Paradas do Turno")
-                    problemas = df[df["status"].str.len() > 3]
-                    
-                    if not problemas.empty:
-                        for _, row in problemas.iterrows():
-                            st.warning(f"**{row['equipamento']}** ({row['produto']}): {row['status']}")
-                    else:
-                        st.success("Nenhuma parada ou problema reportado neste turno.")
-
-            except Exception as e:
-                st.error(f"Erro ao processar o relatório: {e}")
+        except Exception as e:
+            st.warning("Cole e processe o primeiro relatório para começar a formar o seu histórico!")
+    else:
+        st.info("Para ver os gráficos históricos acumulados, conecte a planilha do Google Sheets no Secrets.")
