@@ -18,7 +18,7 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
             try:
                 # Configura a chave do Google Gemini
                 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
                 prompt = f"""
                 Você é um assistente especialista em Controle de Produção Industrial (PCP).
