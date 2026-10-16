@@ -12,8 +12,9 @@ st.title("🏭 Gestão de Produção - Leitor & Histórico Acumulado")
 # Conexão com o Google Sheets
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
-except Exception:
+except Exception as e_conn:
     conn = None
+    st.error(f"Erro ao inicializar conexão com Google Sheets: {e_conn}")
 
 tab1, tab2 = st.tabs(["📋 Processar Relatório Diário", "📈 Dashboard de Histórico"])
 
@@ -65,31 +66,14 @@ with tab1:
                     {texto_whatsapp}
                     """
 
-                    # Sistema com retry para contornar oscilações e erro 503
-                    response = None
-                    modelos = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
-                    
-                    for mod in modelos:
-                        for tentativa in range(3):
-                            try:
-                                res = client.models.generate_content(
-                                    model=mod,
-                                    contents=prompt,
-                                )
-                                if res and res.text:
-                                    response = res
-                                    break
-                            except Exception as err:
-                                if "503" in str(err) or "UNAVAILABLE" in str(err):
-                                    time.sleep(2)  # Aguarda 2 segundos se o servidor do Google estiver ocupado
-                                    continue
-                                else:
-                                    break
-                        if response and response.text:
-                            break
+                    # Execução com o Gemini
+                    response = client.models.generate_content(
+                        model="gemini-3.5-flash-lite",
+                        contents=prompt,
+                    )
 
                     if not response or not response.text:
-                        st.error("⚠️ Os servidores do Google Gemini estão em alta demanda no momento. Aguarde alguns segundos e clique no botão novamente.")
+                        st.error("O modelo não retornou resposta. Tente novamente.")
                         st.stop()
 
                     texto_resposta = response.text.strip()
@@ -102,7 +86,7 @@ with tab1:
 
                     st.success("✅ Relatório Processado com Sucesso!")
 
-                    # Exibição do resumo
+                    # Exibição do resumo do turno
                     st.subheader("📊 Resumo do Turno Processado")
                     c1, c2, c3, c4 = st.columns(4)
                     c1.metric("Data", dados.get("data", "N/A"))
@@ -112,7 +96,7 @@ with tab1:
 
                     st.info(f"**Ocorrências de Pessoal:** {dados.get('ausencias', 'Nenhuma')}")
 
-                    # Tabela de produção do turno
+                    # Tabela de produção
                     lista_prod = dados.get("producao", [])
                     if lista_prod:
                         df_turno = pd.DataFrame(lista_prod)
@@ -127,14 +111,20 @@ with tab1:
 
                         st.dataframe(df_turno, width="stretch")
 
-                        # Gravação automática no Google Sheets (se configurado)
+                        # Tentativa de gravação no Google Sheets
                         if conn:
                             try:
+                                # Trata e grava Produção
                                 df_save_prod = df_turno[["data", "turno", "equipamento", "produto", "programado", "realizado", "eficiencia_%", "status"]]
-                                df_existente_prod = conn.read(worksheet="Producao", ttl=0)
-                                df_final_prod = pd.concat([df_existente_prod, df_save_prod], ignore_index=True)
+                                try:
+                                    df_existente_prod = conn.read(worksheet="Producao", ttl=0)
+                                    df_final_prod = pd.concat([df_existente_prod, df_save_prod], ignore_index=True)
+                                except Exception:
+                                    df_final_prod = df_save_prod
+
                                 conn.update(worksheet="Producao", data=df_final_prod)
 
+                                # Trata e grava Mão de Obra
                                 df_save_mo = pd.DataFrame([{
                                     "data": dados.get("data"),
                                     "turno": dados.get("turno"),
@@ -143,13 +133,19 @@ with tab1:
                                     "temporarios": dados.get("temporarios"),
                                     "ocorrencias": dados.get("ausencias")
                                 }])
-                                df_existente_mo = conn.read(worksheet="Absenteismo", ttl=0)
-                                df_final_mo = pd.concat([df_existente_mo, df_save_mo], ignore_index=True)
+                                try:
+                                    df_existente_mo = conn.read(worksheet="Absenteismo", ttl=0)
+                                    df_final_mo = pd.concat([df_existente_mo, df_save_mo], ignore_index=True)
+                                except Exception:
+                                    df_final_mo = df_save_mo
+
                                 conn.update(worksheet="Absenteismo", data=df_final_mo)
 
                                 st.success("💾 Dados gravados com sucesso na planilha do Google Sheets!")
-                            except Exception:
-                                st.info("Relatório processado! Para gravar automaticamente, certifique-se de configurar a URL da planilha no Secrets.")
+                            except Exception as err_sheet:
+                                st.error(f"❌ Erro ao gravar no Google Sheets: {err_sheet}")
+                        else:
+                            st.warning("⚠️ Conexão gsheets não encontrada no Secrets do Streamlit.")
 
                 except Exception as e:
                     st.error(f"Erro ao processar o relatório: {e}")
@@ -165,25 +161,27 @@ with tab2:
             df_hist_prod = conn.read(worksheet="Producao", ttl=0)
             df_hist_mo = conn.read(worksheet="Absenteismo", ttl=0)
 
-            if not df_hist_prod.empty:
+            if df_hist_prod is not None and not df_hist_prod.empty:
                 st.subheader("⚙️ Média de Eficiência por Equipamento (%)")
-                df_grafico = df_hist_prod.groupby("equipamento")["eficiencia_%"].mean().reset_index()
-                st.bar_chart(df_grafico.set_index("equipamento"))
+                if "eficiencia_%" in df_hist_prod.columns and "equipamento" in df_hist_prod.columns:
+                    df_grafico = df_hist_prod.groupby("equipamento")["eficiencia_%"].mean().reset_index()
+                    st.bar_chart(df_grafico.set_index("equipamento"))
 
                 st.subheader("📦 Produção Total: Programado vs Realizado por Equipamento")
-                df_totais = df_hist_prod.groupby("equipamento")[["programado", "realizado"]].sum()
-                st.bar_chart(df_totais)
+                if "programado" in df_hist_prod.columns and "realizado" in df_hist_prod.columns:
+                    df_totais = df_hist_prod.groupby("equipamento")[["programado", "realizado"]].sum()
+                    st.bar_chart(df_totais)
 
                 st.subheader("📜 Histórico Geral de Produção")
                 st.dataframe(df_hist_prod, width="stretch")
             else:
                 st.info("Nenhum registro de produção encontrado na planilha ainda.")
 
-            if not df_hist_mo.empty:
+            if df_hist_mo is not None and not df_hist_mo.empty:
                 st.subheader("👥 Histórico de Mão de Obra e Absenteísmo")
                 st.dataframe(df_hist_mo, width="stretch")
 
-        except Exception:
-            st.info("Cole e processe o primeiro relatório na Tab 1 para iniciar o histórico!")
+        except Exception as err_dash:
+            st.info(f"Cole e processe o primeiro relatório na Tab 1 para iniciar o histórico! ({err_dash})")
     else:
         st.info("Para visualizar os gráficos e o histórico acumulado, configure o link da planilha no Secrets.")
