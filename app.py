@@ -9,6 +9,13 @@ st.set_page_config(page_title="Gestão de Produção & Histórico", layout="wide
 
 st.title("🏭 Gestão de Produção - Leitor & Histórico Acumulado")
 
+# Tratamento para evitar erros de formatação na chave privada
+if "connections" in st.secrets and "gsheets" in st.secrets["connections"]:
+    if "private_key" in st.secrets["connections"]["gsheets"]:
+        pk = st.secrets["connections"]["gsheets"]["private_key"]
+        if "\\n" in pk:
+            st.secrets["connections"]["gsheets"]["private_key"] = pk.replace("\\n", "\n")
+
 # Conexão com o Google Sheets
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -66,14 +73,31 @@ with tab1:
                     {texto_whatsapp}
                     """
 
-                    # Execução com o Gemini
-                    response = client.models.generate_content(
-                        model="gemini-3.5-flash-lite",
-                        contents=prompt,
-                    )
+                    # Tentativas automáticas (Retry) para contornar oscilações de pico (503)
+                    response = None
+                    modelos_tentativa = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
+                    
+                    for modelo in modelos_tentativa:
+                        for tentativa in range(3):
+                            try:
+                                res = client.models.generate_content(
+                                    model=modelo,
+                                    contents=prompt,
+                                )
+                                if res and res.text:
+                                    response = res
+                                    break
+                            except Exception as err:
+                                if "503" in str(err) or "UNAVAILABLE" in str(err):
+                                    time.sleep(1.5)  # Espera 1.5s antes de tentar novamente
+                                    continue
+                                else:
+                                    break
+                        if response and response.text:
+                            break
 
                     if not response or not response.text:
-                        st.error("O modelo não retornou resposta. Tente novamente.")
+                        st.warning("⏳ Os servidores do Gemini estão com alta demanda no momento. Aguarde 5 segundos e clique no botão novamente.")
                         st.stop()
 
                     texto_resposta = response.text.strip()
@@ -111,10 +135,9 @@ with tab1:
 
                         st.dataframe(df_turno, width="stretch")
 
-                        # Tentativa de gravação no Google Sheets
+                        # Gravação no Google Sheets
                         if conn:
                             try:
-                                # Trata e grava Produção
                                 df_save_prod = df_turno[["data", "turno", "equipamento", "produto", "programado", "realizado", "eficiencia_%", "status"]]
                                 try:
                                     df_existente_prod = conn.read(worksheet="Producao", ttl=0)
@@ -124,7 +147,6 @@ with tab1:
 
                                 conn.update(worksheet="Producao", data=df_final_prod)
 
-                                # Trata e grava Mão de Obra
                                 df_save_mo = pd.DataFrame([{
                                     "data": dados.get("data"),
                                     "turno": dados.get("turno"),
@@ -145,7 +167,7 @@ with tab1:
                             except Exception as err_sheet:
                                 st.error(f"❌ Erro ao gravar no Google Sheets: {err_sheet}")
                         else:
-                            st.warning("⚠️ Conexão gsheets não encontrada no Secrets do Streamlit.")
+                            st.warning("⚠️ Conexão com Google Sheets não configurada no Secrets.")
 
                 except Exception as e:
                     st.error(f"Erro ao processar o relatório: {e}")
@@ -182,6 +204,6 @@ with tab2:
                 st.dataframe(df_hist_mo, width="stretch")
 
         except Exception as err_dash:
-            st.info(f"Cole e processe o primeiro relatório na Tab 1 para iniciar o histórico! ({err_dash})")
+            st.info("Cole e processe o primeiro relatório na Tab 1 para iniciar o histórico!")
     else:
-        st.info("Para visualizar os gráficos e o histórico acumulado, configure o link da planilha no Secrets.")
+        st.info("Para visualizar os gráficos e o histórico acumulado, configure a conexão da planilha no Secrets.")
