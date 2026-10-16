@@ -48,32 +48,38 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                # Função de chamada com tentativa e erro (Retry) para evitar erro 503
+                # Lista com apenas modelos válidos e suportados
+                modelos = ["gemini-3.8-flash", "gemini-1.5-flash"]
                 response = None
-                modelos = ["gemini-3.8-flash", "gemini-2.5-flash"]
-                
+
                 for modelo in modelos:
-                    for tentativa in range(3):  # Tenta até 3 vezes por modelo
+                    for tentativa in range(3):
                         try:
-                            response = client.models.generate_content(
+                            res = client.models.generate_content(
                                 model=modelo,
                                 contents=prompt,
                             )
-                            if response and response.text:
+                            if res and res.text:
+                                response = res
                                 break
-                        except Exception as e:
-                            if "503" in str(e) or "UNAVAILABLE" in str(e):
-                                time.sleep(2)  # Espera 2 segundos se o servidor estiver sobrecarregado
+                        except Exception as err:
+                            msg_erro = str(err)
+                            # Se o modelo for 404 (inexistente), pula direto para o próximo modelo da lista
+                            if "404" in msg_erro or "NOT_FOUND" in msg_erro:
+                                break
+                            # Se for instabilidade (503), espera 2 segundos e tenta novamente o mesmo modelo
+                            elif "503" in msg_erro or "UNAVAILABLE" in msg_erro:
+                                time.sleep(2)
                                 continue
                             else:
-                                raise e
+                                break
                     if response and response.text:
                         break
 
                 if not response or not response.text:
-                    raise Exception("O serviço do Google está temporariamente indisponível. Aguarde alguns segundos e tente novamente.")
+                    raise Exception("Não foi possível conectar aos servidores no momento. Por favor, tente novamente em instantes.")
 
-                # Limpeza e formatação do JSON recebido
+                # Limpeza e conversão do JSON recebido
                 texto_resposta = response.text.strip()
                 if texto_resposta.startswith("```json"):
                     texto_resposta = texto_resposta[7:-3].strip()
