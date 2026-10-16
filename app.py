@@ -16,7 +16,6 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
     else:
         with st.spinner("Lendo e organizando dados com o Google Gemini..."):
             try:
-                # Conexão oficial com a nova biblioteca do Google Gemini
                 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
                 prompt = f"""
@@ -48,13 +47,25 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                # Chamada com o modelo padrão estável
-                response = client.models.generate_content(
-                    model="gemini-3.8-flash",
-                    contents=prompt,
-                )
+                # Lista de modelos para tentar (se o primeiro estiver em alta demanda, usa o próximo)
+                modelos = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-3-flash"]
+                response = None
 
-                # Limpeza do texto para garantir conversão de JSON puro
+                for mod in modelos:
+                    try:
+                        response = client.models.generate_content(
+                            model=mod,
+                            contents=prompt,
+                        )
+                        if response:
+                            break
+                    except Exception:
+                        continue
+
+                if not response:
+                    raise Exception("Todos os modelos estão temporariamente indisponíveis. Tente novamente em instantes.")
+
+                # Limpeza e formatação do JSON recebido
                 texto_resposta = response.text.strip()
                 if texto_resposta.startswith("```json"):
                     texto_resposta = texto_resposta[7:-3].strip()
