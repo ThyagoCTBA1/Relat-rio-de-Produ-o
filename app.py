@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-import google.generativeai as genai
+from google import genai
 import streamlit as st
 
 st.set_page_config(page_title="Gestão de Produção", layout="wide", page_icon="🏭")
@@ -16,25 +16,15 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
     else:
         with st.spinner("Lendo e organizando dados com o Google Gemini..."):
             try:
-                # Configuração da API do Google Gemini
-                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                
-                # Configuração de geração forçando resposta em JSON
-                generation_config = {
-                    "temperature": 0.1,
-                    "response_mime_type": "application/json",
-                }
-
-                model = genai.GenerativeModel(
-                    model_name="gemini-2.0-flash",
-                    generation_config=generation_config
-                )
+                # Conexão oficial com a biblioteca do Google Gemini
+                client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
                 prompt = f"""
                 Você é um assistente especialista em Controle de Produção Industrial (PCP).
                 Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
 
-                Estrutura exata de saída esperada:
+                Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
+
                 {{
                   "data": "DD/MM/AAAA",
                   "turno": "1º ou 2º",
@@ -58,8 +48,20 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                response = model.generate_content(prompt)
-                dados = json.loads(response.text)
+                # Chamada com o modelo atual recomendado
+                response = client.models.generate_content(
+                    model="gemini-3.8-flash",
+                    contents=prompt,
+                )
+
+                # Tratamento do texto para garantir conversão limpa em JSON
+                texto_resposta = response.text.strip()
+                if texto_resposta.startswith("```json"):
+                    texto_resposta = texto_resposta[7:-3].strip()
+                elif texto_resposta.startswith("```"):
+                    texto_resposta = texto_resposta[3:-3].strip()
+
+                dados = json.loads(texto_resposta)
 
                 st.success("✅ Relatório Processado com Sucesso!")
 
