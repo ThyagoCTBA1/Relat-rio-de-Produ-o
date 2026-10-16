@@ -23,7 +23,7 @@ except Exception as e_conn:
     conn = None
     st.error(f"Erro ao inicializar conexão com Google Sheets: {e_conn}")
 
-tab1, tab2 = st.tabs(["📋 Processar Relatório Diário", "📈 Dashboard de Histórico"])
+tab1, tab2, tab3 = st.tabs(["📋 Processar Relatório Diário", "📈 Dashboard de Histórico", "🔍 Teste de Conexão Sheets"])
 
 # ==========================================================
 # TAB 1: PROCESSAR NOVO RELATÓRIO DO WHATSAPP
@@ -73,7 +73,7 @@ with tab1:
                     {texto_whatsapp}
                     """
 
-                    # Tentativas automáticas (Retry) para contornar oscilações de pico (503)
+                    # Tentativas automáticas (Retry)
                     response = None
                     modelos_tentativa = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
                     
@@ -89,7 +89,7 @@ with tab1:
                                     break
                             except Exception as err:
                                 if "503" in str(err) or "UNAVAILABLE" in str(err):
-                                    time.sleep(1.5)  # Espera 1.5s antes de tentar novamente
+                                    time.sleep(1.5)
                                     continue
                                 else:
                                     break
@@ -97,7 +97,7 @@ with tab1:
                             break
 
                     if not response or not response.text:
-                        st.warning("⏳ Os servidores do Gemini estão com alta demanda no momento. Aguarde 5 segundos e clique no botão novamente.")
+                        st.warning("⏳ Os servidores do Gemini estão com alta demanda no momento. Aguarde 5 segundos e tente novamente.")
                         st.stop()
 
                     texto_resposta = response.text.strip()
@@ -165,7 +165,7 @@ with tab1:
 
                                 st.success("💾 Dados gravados com sucesso na planilha do Google Sheets!")
                             except Exception as err_sheet:
-                                st.error(f"❌ Erro ao gravar no Google Sheets: {err_sheet}")
+                                st.error(f"❌ Falha ao gravar no Google Sheets: {err_sheet}")
                         else:
                             st.warning("⚠️ Conexão com Google Sheets não configurada no Secrets.")
 
@@ -207,3 +207,36 @@ with tab2:
             st.info("Cole e processe o primeiro relatório na Tab 1 para iniciar o histórico!")
     else:
         st.info("Para visualizar os gráficos e o histórico acumulado, configure a conexão da planilha no Secrets.")
+
+# ==========================================================
+# TAB 3: TESTE DIRETO DE CONEXÃO E GRAVAÇÃO
+# ==========================================================
+with tab3:
+    st.header("🔍 Diagnóstico da Planilha")
+    if st.button("🧪 Fazer Teste de Leitura/Gravação na Planilha"):
+        if not conn:
+            st.error("Conexão com Sheets indisponível no Secrets.")
+        else:
+            try:
+                # Teste 1: Leitura da aba Producao
+                df_test = conn.read(worksheet="Producao", ttl=0)
+                st.success("✅ Leitura da aba 'Producao' realizada com sucesso!")
+                st.write("Dados atuais na aba 'Producao':", df_test)
+
+                # Teste 2: Gravação de linha de teste
+                teste_data = pd.DataFrame([{
+                    "data": "01/01/2026",
+                    "turno": "1º",
+                    "equipamento": "Teste_Conexao",
+                    "produto": "Teste",
+                    "programado": 100,
+                    "realizado": 100,
+                    "eficiencia_%": 100.0,
+                    "status": "Teste automatizado"
+                }])
+                
+                df_novo = pd.concat([df_test, teste_data], ignore_index=True)
+                conn.update(worksheet="Producao", data=df_novo)
+                st.success("🎉 TESTE DE ESCRITA CONCLUÍDO! Uma linha de teste foi gravada no seu Google Sheets com sucesso!")
+            except Exception as e_teste:
+                st.error(f"❌ Falha no teste de conexão: {e_teste}")
