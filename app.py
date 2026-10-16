@@ -1,5 +1,4 @@
 import json
-import time
 import pandas as pd
 from google import genai
 import streamlit as st
@@ -17,7 +16,7 @@ except Exception:
 
 tab1, tab2 = st.tabs(["📋 Processar Relatório Diário", "📈 Dashboard de Histórico"])
 
-# ================= =========================================
+# ==========================================================
 # TAB 1: PROCESSAR NOVO RELATÓRIO DO WHATSAPP
 # ==========================================================
 with tab1:
@@ -30,6 +29,10 @@ with tab1:
         else:
             with st.spinner("Lendo dados e atualizando histórico..."):
                 try:
+                    if "GEMINI_API_KEY" not in st.secrets:
+                        st.error("❌ A chave GEMINI_API_KEY não foi encontrada nos Secrets do Streamlit.")
+                        st.stop()
+
                     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
                     prompt = f"""
@@ -61,7 +64,6 @@ with tab1:
                     {texto_whatsapp}
                     """
 
-                    # Chamada do modelo Gemini
                     response = client.models.generate_content(
                         model="gemini-3.5-flash-lite",
                         contents=prompt,
@@ -77,13 +79,15 @@ with tab1:
 
                     st.success("✅ Relatório Processado com Sucesso!")
 
-                    # Exibição resumida
+                    # Exibição do resumo
                     st.subheader("📊 Resumo do Turno Processado")
                     c1, c2, c3, c4 = st.columns(4)
                     c1.metric("Data", dados.get("data", "N/A"))
                     c2.metric("Turno", dados.get("turno", "N/A"))
                     c3.metric("M.O Total", dados.get("mo_total", 0))
                     c4.metric("Efetivos / Temp", f"{dados.get('efetivos', 0)} / {dados.get('temporarios', 0)}")
+
+                    st.info(f"**Ocorrências de Pessoal:** {dados.get('ausencias', 'Nenhuma')}")
 
                     # Tabela de produção do turno
                     lista_prod = dados.get("producao", [])
@@ -98,18 +102,16 @@ with tab1:
                                 axis=1
                             )
 
-                        st.dataframe(df_turno, use_container_width=True)
+                        st.dataframe(df_turno, width="stretch")
 
                         # Gravação automática no Google Sheets (se configurado)
                         if conn:
                             try:
-                                # Prepara dados de produção
                                 df_save_prod = df_turno[["data", "turno", "equipamento", "produto", "programado", "realizado", "eficiencia_%", "status"]]
                                 df_existente_prod = conn.read(worksheet="Producao", ttl=0)
                                 df_final_prod = pd.concat([df_existente_prod, df_save_prod], ignore_index=True)
                                 conn.update(worksheet="Producao", data=df_final_prod)
 
-                                # Prepara dados de M.O
                                 df_save_mo = pd.DataFrame([{
                                     "data": dados.get("data"),
                                     "turno": dados.get("turno"),
@@ -123,11 +125,11 @@ with tab1:
                                 conn.update(worksheet="Absenteismo", data=df_final_mo)
 
                                 st.success("💾 Dados gravados com sucesso na planilha do Google Sheets!")
-                            except Exception as err_save:
-                                st.info("Visualização gerada! Para salvar automaticamente na planilha, configure a URL no Secrets.")
+                            except Exception:
+                                st.info("Relatório processado! Para gravar automaticamente, certifique-se de configurar a URL da planilha no Secrets.")
 
                 except Exception as e:
-                    st.error(f"Erro ao processar relatório: {e}")
+                    st.error(f"Erro ao processar o relatório: {e}")
 
 # ==========================================================
 # TAB 2: DASHBOARD DE MÉTRICAS E HISTÓRICO ACUMULADO
@@ -141,24 +143,24 @@ with tab2:
             df_hist_mo = conn.read(worksheet="Absenteismo", ttl=0)
 
             if not df_hist_prod.empty:
-                st.subheader("⚙️ Eficiência Médias por Equipamento (%)")
+                st.subheader("⚙️ Média de Eficiência por Equipamento (%)")
                 df_grafico = df_hist_prod.groupby("equipamento")["eficiencia_%"].mean().reset_index()
                 st.bar_chart(df_grafico.set_index("equipamento"))
 
-                st.subheader("📦 Produção Total Realizada vs. Programada por Equipamento")
+                st.subheader("📦 Produção Total: Programado vs Realizado por Equipamento")
                 df_totais = df_hist_prod.groupby("equipamento")[["programado", "realizado"]].sum()
                 st.bar_chart(df_totais)
 
                 st.subheader("📜 Histórico Geral de Produção")
-                st.dataframe(df_hist_prod, use_container_width=True)
+                st.dataframe(df_hist_prod, width="stretch")
             else:
-                st.info("Nenhum dado de produção encontrado na planilha ainda.")
+                st.info("Nenhum registro de produção encontrado na planilha ainda.")
 
             if not df_hist_mo.empty:
-                st.subheader("👥 Ocorrências de Absenteísmo e Mão de Obra")
-                st.dataframe(df_hist_mo, use_container_width=True)
+                st.subheader("👥 Histórico de Mão de Obra e Absenteísmo")
+                st.dataframe(df_hist_mo, width="stretch")
 
-        except Exception as e:
-            st.warning("Cole e processe o primeiro relatório para começar a formar o seu histórico!")
+        except Exception:
+            st.info("Cole e processe o primeiro relatório na Tab 1 para iniciar o histórico!")
     else:
-        st.info("Para ver os gráficos históricos acumulados, conecte a planilha do Google Sheets no Secrets.")
+        st.info("Para visualizar os gráficos e o histórico acumulado, configure o link da planilha no Secrets.")
