@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-from google import genai
+import google.generativeai as genai
 import streamlit as st
 
 st.set_page_config(page_title="Gestão de Produção", layout="wide", page_icon="🏭")
@@ -16,14 +16,25 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
     else:
         with st.spinner("Lendo e organizando dados com o Google Gemini..."):
             try:
-                client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+                # Configuração da API do Google Gemini
+                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+                
+                # Configuração de geração forçando resposta em JSON
+                generation_config = {
+                    "temperature": 0.1,
+                    "response_mime_type": "application/json",
+                }
+
+                model = genai.GenerativeModel(
+                    model_name="gemini-1.5-flash",
+                    generation_config=generation_config
+                )
 
                 prompt = f"""
                 Você é um assistente especialista em Controle de Produção Industrial (PCP).
                 Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
 
-                Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
-
+                Estrutura exata de saída esperada:
                 {{
                   "data": "DD/MM/AAAA",
                   "turno": "1º ou 2º",
@@ -47,32 +58,8 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                # Lista de modelos para tentar (se o primeiro estiver em alta demanda, usa o próximo)
-                modelos = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-3-flash"]
-                response = None
-
-                for mod in modelos:
-                    try:
-                        response = client.models.generate_content(
-                            model=mod,
-                            contents=prompt,
-                        )
-                        if response:
-                            break
-                    except Exception:
-                        continue
-
-                if not response:
-                    raise Exception("Todos os modelos estão temporariamente indisponíveis. Tente novamente em instantes.")
-
-                # Limpeza e formatação do JSON recebido
-                texto_resposta = response.text.strip()
-                if texto_resposta.startswith("```json"):
-                    texto_resposta = texto_resposta[7:-3].strip()
-                elif texto_resposta.startswith("```"):
-                    texto_resposta = texto_resposta[3:-3].strip()
-
-                dados = json.loads(texto_resposta)
+                response = model.generate_content(prompt)
+                dados = json.loads(response.text)
 
                 st.success("✅ Relatório Processado com Sucesso!")
 
