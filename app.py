@@ -1,222 +1,234 @@
-[     UTC     ] Logs for relat-rio-de-appu-o-eze2fbhkrvqdggajqwndqn.streamlit.app/
-
-────────────────────────────────────────────────────────────────────────────────────────
-
-[17:59:43] 🚀 Starting up repository: 'relat-rio-de-produ-o', branch: 'main', main module: 'app.py'
-
-[17:59:43] 🐙 Cloning repository...
-
-[17:59:44] 🐙 Cloning into '/mount/src/relat-rio-de-produ-o'...
-
-[17:59:44] 🐙 Cloned repository!
-
-[17:59:44] 🐙 Pulling code changes from Github...
-
-[17:59:44] 📦 Processing dependencies...
-
-
-──────────────────────────────────────── uv ───────────────────────────────────────────
-
-
-Using uv pip install.
-
-Using Python 3.14.8 environment at /home/adminuser/venv
-
-Resolved 63 packages in 681ms
-
-Prepared 63 packages in 1.99s
-
-Installed 63 packages in 79ms
-
- + altair==6.3.0
-
- + annotated-types==0.8.0
-
- + anyio==4.15.1[2026-10-16 17:59:47.351583] 
-
- + attrs==26.1.0
-
- + certifi==2026.7.22[2026-10-16 17:59:47.351754] 
-
- + cffi==2.1.1
-
- + [2026-10-16 17:59:47.351907] charset-normalizer==3.5.2
-
- + click==8.5.0
-
- + cryptography==50.0.2
-
- +[2026-10-16 17:59:47.352029]  decorator==5.3.1
-
- + distro==1.9.0
-
- + duckdb==1.5.6
-
- [2026-10-16 17:59:47.352172] + google-auth==2.62.0
-
- + google-auth-oauthlib==1.5.0
-
- + google-genai[2026-10-16 17:59:47.352305] ==2.31.0
-
- + gspread==5.12.4
-
- + gspread-dataframe==4.0.0
-
- +[2026-10-16 17:59:47.352422]  gspread-formatting==1.2.1
-
- + gspread-pandas==3.3.0
-
- + h11==[2026-10-16 17:59:47.352557] 0.16.0
-
- + httpcore==1.0.9
-
- + httpx==0.28.1[2026-10-16 17:59:47.352710] 
-
- + idna==3.20
-
- + itsdangerous==2.2.0
-
- + jinja2[2026-10-16 17:59:47.352879] ==3.1.6
-
- + jsonschema==4.26.0
-
- + jsonschema-specifications==[2026-10-16 17:59:47.353027] 2025.9.1
-
- + markupsafe==3.0.4
-
- + narwhals==2.27.1[2026-10-16 17:59:47.353146] 
-
- + numpy==2.5.4
-
- + oauthlib==4.0.0
-
- + packaging==26.3
-
- + pandas==3.0.6
-
- +[2026-10-16 17:59:47.353337]  pillow==12.3.0
-
- + protobuf==7.36.2
-
- + [2026-10-16 17:59:47.353411] pyarrow==26.0.0
-
- + pyasn1==0.6.4
-
- + pyasn1-modules[2026-10-16 17:59:47.353493] ==0.4.2
-
- + pycparser==3.11
-
- + pydantic[2026-10-16 17:59:47.353570] ==2.14.1
-
- + pydantic-core==2.50.1
-
- + pydeck==[2026-10-16 17:59:47.353661] 0.9.3
-
- + python-dateutil==2.9.0.post0
-
- + python-multipart==[2026-10-16 17:59:47.353794] 0.0.32
-
- + referencing==0.37.0
-
- + requests==2.34.2[2026-10-16 17:59:47.353885] 
-
- + requests-oauthlib==2.0.0
-
- + rpds-py==2026.9.1[2026-10-16 17:59:47.353968] 
-
- + six==1.17.0
-
- + sniffio==1.3.1
-
- + sql-metadata==3.0.1
-
- + sqlglot==30.23.0
-
- + st-gsheets-connection==0.1.0
-
- + starlette==1.8.0
-
- + streamlit==[2026-10-16 17:59:47.354146] 1.66.0
-
- + tenacity==9.1.4
-
- + typing-extensions==4.16.0[2026-10-16 17:59:47.354216] 
-
- + typing-inspection==0.4.4
-
- + urllib3==2.8.0
-
- [2026-10-16 17:59:47.354298] + uvicorn==0.54.0
-
- + validators==0.36.0
-
- + watchdog==[2026-10-16 17:59:47.354368] 6.0.0
-
- + websockets==16.1.1
-
-Checking if Streamlit is installed
-
-Found Streamlit version 1.66.0 in the environment
-
-Detected pyarrow 26.0.0 (known segfault, apache/arrow#50471). Replacing with pyarrow<25.
-
-Using uv pip install.
-
-Using Python 3.14.8 environment at /home/adminuser/venv
-
-Resolved 1 package in 31ms
-
-Prepared 1 package in 581ms
-
-Uninstalled 1 package in 15ms
-
-Installed 1 package in 19ms
-
- - pyarrow==26.0.0
-
- + pyarrow==24.0.0
-
-Installing rich for an improved exception logging
-
-Using uv pip install.
-
-Using Python 3.14.8 environment at /home/adminuser/venv
-
-Resolved 4 packages in 121ms
-
-Prepared 4 packages in 87ms
-
-Installed 4 packages in 8ms
-
- + markdown-it-py==4.2.0
-
- + mdurl==0.1.2[2026-10-16 17:59:50.970791] 
-
- + pygments==2.21.0
-
- + rich==15.0.0
-
-
-────────────────────────────────────────────────────────────────────────────────────────
-
-
-[17:59:51] 🐍 Python dependencies were installed from /mount/src/relat-rio-de-produ-o/requirements.txt using uv.
-
-Check if streamlit is installed
-
-Streamlit is already installed
-
-[17:59:52] 📦 Processed dependencies!
-
-2026-10-16 17:59:54.166 Uvicorn server started on :::8501
-
-
-
-
-[18:06:20] 🐙 Pulling code changes from Github...
-
-[18:06:21] 📦 Processing dependencies...
-
-[18:06:21] 📦 Processed dependencies!
-
-[18:06:22] 🔄 Updated app!
+import json
+import time
+import pandas as pd
+from google import genai
+import streamlit as st
+from streamlit_gsheets import GSheetsConnection
+
+st.set_page_config(page_title="Gestão de Produção & Histórico", layout="wide", page_icon="🏭")
+
+st.title("🏭 Gestão de Produção - Leitor & Histórico Acumulado")
+
+# Ajuste automático de formatação na chave privada do Secrets
+if "connections" in st.secrets and "gsheets" in st.secrets["connections"]:
+    if "private_key" in st.secrets["connections"]["gsheets"]:
+        pk = st.secrets["connections"]["gsheets"]["private_key"]
+        if "\\n" in pk:
+            st.secrets["connections"]["gsheets"]["private_key"] = pk.replace("\\n", "\n")
+
+# Conexão com o Google Sheets
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except Exception as e_conn:
+    conn = None
+    st.error(f"Erro ao inicializar conexão com Google Sheets: {e_conn}")
+
+tab1, tab2, tab3 = st.tabs(["📋 Processar Relatório Diário", "📈 Dashboard de Histórico", "🔍 Teste de Conexão Sheets"])
+
+# ==========================================================
+# TAB 1: PROCESSAR NOVO RELATÓRIO DO WHATSAPP
+# ==========================================================
+with tab1:
+    st.write("Copie o texto do relatório do WhatsApp e cole na caixa abaixo.")
+    texto_whatsapp = st.text_area("📋 Cole o relatório aqui:", height=250)
+
+    if st.button("🚀 Processar e Salvar no Histórico", type="primary"):
+        if not texto_whatsapp.strip():
+            st.warning("⚠️ Por favor, cole o texto do relatório antes de processar.")
+        else:
+            with st.spinner("Lendo dados via Gemini e salvando no Google Sheets..."):
+                try:
+                    if "GEMINI_API_KEY" not in st.secrets or not st.secrets["GEMINI_API_KEY"]:
+                        st.error("❌ A chave GEMINI_API_KEY não está configurada nos Secrets do Streamlit.")
+                        st.stop()
+
+                    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+
+                    prompt = f"""
+                    Você é um assistente especialista em Controle de Produção Industrial (PCP).
+                    Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
+
+                    Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
+
+                    {{
+                      "data": "DD/MM/AAAA",
+                      "turno": "1º ou 2º",
+                      "mo_total": 0,
+                      "efetivos": 0,
+                      "temporarios": 0,
+                      "ausencias": "Descrição das ausências, atestados e alterações de pessoal",
+                      "producao": [
+                        {{
+                          "equipamento": "Nome do equipamento",
+                          "produto": "Nome do produto ou projeto",
+                          "programado": 0,
+                          "realizado": 0,
+                          "mo_necessaria": 0,
+                          "status": "Detalhes de falhas, paradas e observações"
+                        }}
+                      ]
+                    }}
+
+                    Texto do relatório:
+                    {texto_whatsapp}
+                    """
+
+                    response = None
+                    for modelo in ["gemini-3.5-flash-lite", "gemini-3.8-flash"]:
+                        for tentativa in range(2):
+                            try:
+                                res = client.models.generate_content(
+                                    model=modelo,
+                                    contents=prompt,
+                                )
+                                if res and res.text:
+                                    response = res
+                                    break
+                            except Exception:
+                                time.sleep(1)
+                                continue
+                        if response and response.text:
+                            break
+
+                    if not response or not response.text:
+                        st.error("❌ O Gemini não retornou resposta. Verifique se a sua GEMINI_API_KEY está correta no Secrets.")
+                        st.stop()
+
+                    texto_resposta = response.text.strip()
+                    if texto_resposta.startswith("```json"):
+                        texto_resposta = texto_resposta[7:-3].strip()
+                    elif texto_resposta.startswith("```"):
+                        texto_resposta = texto_resposta[3:-3].strip()
+
+                    dados = json.loads(texto_resposta)
+
+                    st.success("✅ Relatório Lido com Sucesso pela IA!")
+
+                    # Exibição das métricas
+                    st.subheader("📊 Resumo do Turno Processado")
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.metric("Data", dados.get("data", "N/A"))
+                    c2.metric("Turno", dados.get("turno", "N/A"))
+                    c3.metric("M.O Total", dados.get("mo_total", 0))
+                    c4.metric("Efetivos / Temp", f"{dados.get('efetivos', 0)} / {dados.get('temporarios', 0)}")
+
+                    st.info(f"**Ocorrências de Pessoal:** {dados.get('ausencias', 'Nenhuma')}")
+
+                    # Tabela de produção
+                    lista_prod = dados.get("producao", [])
+                    if lista_prod:
+                        df_turno = pd.DataFrame(lista_prod)
+                        df_turno["data"] = dados.get("data")
+                        df_turno["turno"] = dados.get("turno")
+                        
+                        if "programado" in df_turno.columns and "realizado" in df_turno.columns:
+                            df_turno["eficiencia_%"] = df_turno.apply(
+                                lambda r: round((r["realizado"] / r["programado"] * 100), 1) if r["programado"] > 0 else 0.0,
+                                axis=1
+                            )
+
+                        st.dataframe(df_turno, width="stretch")
+
+                        # Gravação no Google Sheets
+                        if conn:
+                            try:
+                                df_save_prod = df_turno[["data", "turno", "equipamento", "produto", "programado", "realizado", "eficiencia_%", "status"]]
+                                try:
+                                    df_existente_prod = conn.read(worksheet="Producao", ttl=0)
+                                    df_final_prod = pd.concat([df_existente_prod, df_save_prod], ignore_index=True)
+                                except Exception:
+                                    df_final_prod = df_save_prod
+
+                                conn.update(worksheet="Producao", data=df_final_prod)
+
+                                df_save_mo = pd.DataFrame([{
+                                    "data": dados.get("data"),
+                                    "turno": dados.get("turno"),
+                                    "mo_total": dados.get("mo_total"),
+                                    "efetivos": dados.get("efetivos"),
+                                    "temporarios": dados.get("temporarios"),
+                                    "ocorrencias": dados.get("ausencias")
+                                }])
+                                try:
+                                    df_existente_mo = conn.read(worksheet="Absenteismo", ttl=0)
+                                    df_final_mo = pd.concat([df_existente_mo, df_save_mo], ignore_index=True)
+                                except Exception:
+                                    df_final_mo = df_save_mo
+
+                                conn.update(worksheet="Absenteismo", data=df_final_mo)
+
+                                st.success("💾 Dados gravados com sucesso na planilha do Google Sheets!")
+                            except Exception as err_sheet:
+                                st.error(f"❌ Falha na gravação do Google Sheets: {err_sheet}")
+                        else:
+                            st.warning("⚠️ Conexão com Google Sheets indisponível.")
+
+                except Exception as e:
+                    st.error(f"❌ Erro geral no processamento: {e}")
+
+# ==========================================================
+# TAB 2: DASHBOARD DE MÉTRICAS E HISTÓRICO ACUMULADO
+# ==========================================================
+with tab2:
+    st.header("📈 Histórico Acumulado e Gráficos")
+    
+    if conn:
+        try:
+            df_hist_prod = conn.read(worksheet="Producao", ttl=0)
+            df_hist_mo = conn.read(worksheet="Absenteismo", ttl=0)
+
+            if df_hist_prod is not None and not df_hist_prod.empty:
+                st.subheader("⚙️ Média de Eficiência por Equipamento (%)")
+                if "eficiencia_%" in df_hist_prod.columns and "equipamento" in df_hist_prod.columns:
+                    df_grafico = df_hist_prod.groupby("equipamento")["eficiencia_%"].mean().reset_index()
+                    st.bar_chart(df_grafico.set_index("equipamento"))
+
+                st.subheader("📦 Produção Total: Programado vs Realizado por Equipamento")
+                if "programado" in df_hist_prod.columns and "realizado" in df_hist_prod.columns:
+                    df_totais = df_hist_prod.groupby("equipamento")[["programado", "realizado"]].sum()
+                    st.bar_chart(df_totais)
+
+                st.subheader("📜 Histórico Geral de Produção")
+                st.dataframe(df_hist_prod, width="stretch")
+            else:
+                st.info("Nenhum registro de produção encontrado na planilha ainda.")
+
+            if df_hist_mo is not None and not df_hist_mo.empty:
+                st.subheader("👥 Histórico de Mão de Obra e Absenteísmo")
+                st.dataframe(df_hist_mo, width="stretch")
+
+        except Exception as err_dash:
+            st.info("Cole e processe o primeiro relatório na Tab 1 para iniciar o histórico!")
+    else:
+        st.info("Para visualizar os gráficos e o histórico acumulado, configure a conexão da planilha no Secrets.")
+
+# ==========================================================
+# TAB 3: TESTE DIRETO DE CONEXÃO E GRAVAÇÃO
+# ==========================================================
+with tab3:
+    st.header("🔍 Diagnóstico da Planilha")
+    if st.button("🧪 Fazer Teste de Leitura/Gravação na Planilha"):
+        if not conn:
+            st.error("Conexão com Sheets indisponível no Secrets.")
+        else:
+            try:
+                df_test = conn.read(worksheet="Producao", ttl=0)
+                st.success("✅ Leitura da aba 'Producao' realizada com sucesso!")
+                st.write("Dados atuais na aba 'Producao':", df_test)
+
+                teste_data = pd.DataFrame([{
+                    "data": "01/01/2026",
+                    "turno": "1º",
+                    "equipamento": "Teste_Conexao",
+                    "produto": "Teste",
+                    "programado": 100,
+                    "realizado": 100,
+                    "eficiencia_%": 100.0,
+                    "status": "Teste automatizado"
+                }])
+                
+                df_novo = pd.concat([df_test, teste_data], ignore_index=True)
+                conn.update(worksheet="Producao", data=df_novo)
+                st.success("🎉 TESTE DE ESCRITA CONCLUÍDO! Uma linha de teste foi gravada no seu Google Sheets com sucesso!")
+            except Exception as e_teste:
+                st.error(f"❌ Falha no teste de conexão: {e_teste}")
