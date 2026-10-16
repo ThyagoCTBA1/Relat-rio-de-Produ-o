@@ -1,4 +1,5 @@
 import json
+import time
 import pandas as pd
 from google import genai
 import streamlit as st
@@ -16,7 +17,6 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
     else:
         with st.spinner("Lendo e organizando dados com o Google Gemini..."):
             try:
-                # Verifica se a chave existe no Secrets
                 if "GEMINI_API_KEY" not in st.secrets:
                     st.error("❌ A chave GEMINI_API_KEY não foi encontrada nos Secrets do Streamlit.")
                     st.stop()
@@ -27,7 +27,7 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 Você é um assistente especialista em Controle de Produção Industrial (PCP).
                 Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
 
-                Retorne APENAS o JSON puro, sem marcações adicionais de código ou textos antes/depois:
+                Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
 
                 {{
                   "data": "DD/MM/AAAA",
@@ -52,14 +52,34 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                # Chamada direta com o modelo atual estável
-                response = client.models.generate_content(
-                    model="gemini-3.5-flash-lite",
-                    contents=prompt,
-                )
+                # Lista de modelos alternativos para evitar instabilidades (503/404)
+                modelos = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
+                response = None
+                ultimo_erro = None
+
+                for modelo in modelos:
+                    for tentativa in range(3):
+                        try:
+                            res = client.models.generate_content(
+                                model=modelo,
+                                contents=prompt,
+                            )
+                            if res and res.text:
+                                response = res
+                                break
+                        except Exception as err:
+                            ultimo_erro = str(err)
+                            # Se for instabilidade (503), aguarda 2 segundos e tenta novamente
+                            if "503" in ultimo_erro or "UNAVAILABLE" in ultimo_erro:
+                                time.sleep(2)
+                                continue
+                            else:
+                                break
+                    if response and response.text:
+                        break
 
                 if not response or not response.text:
-                    st.error("O modelo não retornou nenhum texto.")
+                    st.error(f"Erro de conexão com o servidor do Google: {ultimo_erro}")
                     st.stop()
 
                 # Limpeza e conversão do JSON recebido
