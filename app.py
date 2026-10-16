@@ -1,5 +1,4 @@
 import json
-import time
 import pandas as pd
 from google import genai
 import streamlit as st
@@ -17,13 +16,18 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
     else:
         with st.spinner("Lendo e organizando dados com o Google Gemini..."):
             try:
+                # Verifica se a chave existe no Secrets
+                if "GEMINI_API_KEY" not in st.secrets:
+                    st.error("❌ A chave GEMINI_API_KEY não foi encontrada nos Secrets do Streamlit.")
+                    st.stop()
+
                 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
                 prompt = f"""
                 Você é um assistente especialista em Controle de Produção Industrial (PCP).
                 Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
 
-                Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
+                Retorne APENAS o JSON puro, sem marcações adicionais de código ou textos antes/depois:
 
                 {{
                   "data": "DD/MM/AAAA",
@@ -48,36 +52,15 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                # Lista com apenas modelos válidos e suportados
-                modelos = ["gemini-3.8-flash", "gemini-1.5-flash"]
-                response = None
-
-                for modelo in modelos:
-                    for tentativa in range(3):
-                        try:
-                            res = client.models.generate_content(
-                                model=modelo,
-                                contents=prompt,
-                            )
-                            if res and res.text:
-                                response = res
-                                break
-                        except Exception as err:
-                            msg_erro = str(err)
-                            # Se o modelo for 404 (inexistente), pula direto para o próximo modelo da lista
-                            if "404" in msg_erro or "NOT_FOUND" in msg_erro:
-                                break
-                            # Se for instabilidade (503), espera 2 segundos e tenta novamente o mesmo modelo
-                            elif "503" in msg_erro or "UNAVAILABLE" in msg_erro:
-                                time.sleep(2)
-                                continue
-                            else:
-                                break
-                    if response and response.text:
-                        break
+                # Chamada direta com o modelo atual estável
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                )
 
                 if not response or not response.text:
-                    raise Exception("Não foi possível conectar aos servidores no momento. Por favor, tente novamente em instantes.")
+                    st.error("O modelo não retornou nenhum texto.")
+                    st.stop()
 
                 # Limpeza e conversão do JSON recebido
                 texto_resposta = response.text.strip()
