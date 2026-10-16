@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-import google.generativeai as genai
+from google import genai
 import streamlit as st
 
 st.set_page_config(page_title="Gestão de Produção", layout="wide", page_icon="🏭")
@@ -16,15 +16,14 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
     else:
         with st.spinner("Lendo e organizando dados com o Google Gemini..."):
             try:
-                # Configura a chave do Google Gemini
-                genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-                model = genai.GenerativeModel("gemini-1.5-flash-latest")
+                # Conexão oficial com a nova biblioteca do Google Gemini
+                client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
                 prompt = f"""
                 Você é um assistente especialista em Controle de Produção Industrial (PCP).
                 Analise o texto do relatório abaixo e extraia todas as informações no formato JSON rigorosamente estruturado.
 
-                Retorne APENAS o JSON puro, sem textos adicionais antes ou depois:
+                Retorne APENAS o JSON puro, sem marcações adicionais ou textos antes/depois:
 
                 {{
                   "data": "DD/MM/AAAA",
@@ -49,12 +48,20 @@ if st.button("🚀 Processar e Agrupar Dados", type="primary"):
                 {texto_whatsapp}
                 """
 
-                response = model.generate_content(
-                    prompt,
-                    generation_config={"response_mime_type": "application/json"}
+                # Chamada com o modelo padrão estável
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
                 )
 
-                dados = json.loads(response.text)
+                # Limpeza do texto para garantir conversão de JSON puro
+                texto_resposta = response.text.strip()
+                if texto_resposta.startswith("```json"):
+                    texto_resposta = texto_resposta[7:-3].strip()
+                elif texto_resposta.startswith("```"):
+                    texto_resposta = texto_resposta[3:-3].strip()
+
+                dados = json.loads(texto_resposta)
 
                 st.success("✅ Relatório Processado com Sucesso!")
 
